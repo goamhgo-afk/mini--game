@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "name": "Mini Game",
+    "defaultPrice": 50000,
+    "footballPrice": 20000
+  },
+  "devices": [
+    {
+      "id": 1,
+      "name": "PS4 شماره 01",
+      "price": 30000,
+      "status": "available"
+    },
+    {
+      "id": 2,
+      "name": "PS4 شماره 02",
+      "price": 30000,
+      "status": "available"
+    },
+    {
+      "id": 3,
+      "name": "PS4 شماره 03",
+      "price": 30000,
+      "status": "available"
+    }
+  ],
+  "bookings": []
+}
