@@ -1,5 +1,5 @@
 const $=x=>document.querySelector(x),money=n=>Number(n).toLocaleString("fa-IR")+" تومان";
-let devices=[],bookings=[],settings={footballPrice:20000};
+let devices=[],bookings=[],settings={footballPrice:20000,openHoursByDay:{}};
 async function api(u,o){let r=await fetch(u,o),x=await r.json();if(!r.ok)throw Error(x.error||"خطا");return x}
 
 const pMonthNames=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
@@ -62,6 +62,25 @@ function freeAt(d){
  if(bookings.some(b=>b.football&&overlap(b)))return false;
  return !bookings.some(b=>b.deviceId==d.id&&overlap(b));
 }
+function getWeekday(){
+ const d=new Date((String($("#date").value||"")+"T12:00:00"));
+ return Number.isNaN(d.getTime())?null:d.getDay();
+}
+function getTodayHours(){
+ const day=getWeekday();
+ if(day===null)return [];
+ return Array.isArray(settings.openHoursByDay?.[day])?settings.openHoursByDay[day]:[];
+}
+function isOpenForStart(start,dur){
+ const mins=toMin(start),end=mins+(+dur||1)*60;
+ return getTodayHours().some(w=>{const [a,z]=String(w).split("-");if(!a||!z)return false;return mins>=toMin(a)&&end<=toMin(z)});
+}
+function renderTimeOptions(){
+ const el=$("#start");if(!el)return;const old=el.value;const dur=+$("#duration").value||1;const hours=getTodayHours();el.innerHTML="";
+ for(let h=0;h<24;h++)for(let m of [0,30]){let v=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;if(isOpenForStart(v,dur))el.insertAdjacentHTML("beforeend",`<option value="${v}">${v}</option>`)}
+ if([...el.options].some(o=>o.value===old))el.value=old;
+ if(!el.options.length){el.disabled=true;el.insertAdjacentHTML("beforeend",`<option value="">${hours.length?"برای این مدت، ساعت آزادی وجود ندارد":"این روز تعطیل است و رزروی باز نیست"}</option>`)}else el.disabled=false;
+}
 function render(){
  $("#grid").innerHTML=devices.map(d=>{let free=freeAt(d);return `<div class="card"><div class="icon">🎮</div><h3>${d.name}</h3><p class="${free?"green":"red"}">● ${free?"آزاد":"این ساعت رزرو شده"}</p><strong>${money(d.price)} / ساعت</strong></div>`}).join("");
  const old=$("#device").value;
@@ -70,10 +89,10 @@ function render(){
  else {let f=[...$("#device").options].find(o=>!o.disabled);if(f)$("#device").value=f.value}
 }
 function updateTotal(){let d=devices.find(x=>x.id==$("#device").value);let base=(d?.price||50000)*+$("#duration").value;let extra=$("#football")?.checked?(+settings.footballPrice||20000):0;$("#total").textContent=money(base+extra)}
-async function load(){[devices,bookings,settings]=await Promise.all([api("/api/devices"),api("/api/bookings"),api("/api/settings")]);render();updateTotal();updateFootballText()}
-["jy","jm","jd","start","duration"].forEach(x=>$("#"+x).onchange=()=>{if(x==="jy"||x==="jm"||x==="jd")syncDate();else{render();updateTotal()}});
+async function load(){[devices,bookings,settings]=await Promise.all([api("/api/devices"),api("/api/bookings"),api("/api/settings")]);renderTimeOptions();render();updateTotal();updateFootballText()}
+["jy","jm","jd","start","duration"].forEach(x=>$("#"+x).onchange=()=>{if(x==="jy"||x==="jm"||x==="jd")syncDate();else{if(x==="duration")renderTimeOptions();render();updateTotal();updateFootballText()}});
 $("#device").onchange=updateTotal;
-function initTime24(){let el=$("#start");if(!el)return;el.innerHTML="";for(let h=0;h<24;h++)for(let m of [0,30]){let v=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;el.insertAdjacentHTML("beforeend",`<option value="${v}">${v}</option>`)}}
+function initTime24(){renderTimeOptions()}
 function footballBlockedForTime(){let start=$("#start")?.value||"";let dur=+$("#duration").value||1;if(!start)return false;let [hh,mm]=start.split(":").map(Number);let mins=hh*60+mm;let end=mins+dur*60;return bookings.some(b=>b.status!=="cancelled"&&b.football&&b.date===$("#date").value&&Math.max(mins,hm(b.start))<Math.min(end,hm(b.end)))}
 function hm(t){let p=String(t).split(":").map(Number);return (p[0]||0)*60+(p[1]||0)}
 function updateFootballText(){let blocked=footballBlockedForTime();if($("#football")){if(blocked){$("#football").checked=false;$("#football").disabled=true}else $("#football").disabled=false}if($("#footballPriceText"))$("#footballPriceText").textContent=blocked?" (این ساعت رزرو شده است)":` (+${money(settings.footballPrice||20000)})`;updateTotal()} $("#football").onchange=updateFootballText;
@@ -83,7 +102,7 @@ $("#cancelPhone").addEventListener("input",()=>{$("#cancelPhone").value=normaliz
 $("#form").onsubmit=async e=>{e.preventDefault();
  if(!$("#customer").value.trim())return $("#result").innerHTML='<div class="error">لطفاً نام را وارد کنید.</div>';
  if(!/^09\d{9}$/.test($("#phone").value.trim()))return $("#result").innerHTML='<div class="error">شماره تماس باید ۱۱ رقمی و با 09 شروع شود.</div>';
- if(!$("#start").value)return $("#result").innerHTML='<div class="error">ساعت شروع را انتخاب کنید.</div>';
+ if(!$("#start").value || !isOpenForStart($("#start").value,+$("#duration").value))return $("#result").innerHTML='<div class="error">این ساعت خارج از زمان کاری گیم‌نت است.</div>';
  let d=devices.find(x=>x.id==$("#device").value);if(!d||!freeAt(d))return $("#result").innerHTML='<div class="error">این دستگاه در این ساعت آزاد نیست؛ یک دستگاه یا ساعت دیگر انتخاب کنید.</div>';
  try{let b=await api("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({deviceId:+$("#device").value,date:$("#date").value,start:$("#start").value,duration:+$("#duration").value,customer:$("#customer").value.trim(),phone:normalizeDigits($("#phone").value.trim()),football:!!$("#football").checked})});
  $("#result").innerHTML=`<div class="success">رزرو با موفقیت ثبت شد 🎉<br>کد رزرو: <b>${b.code}</b><br>${b.deviceName} · ${$("#jy").value}/${$("#jm").value}/${$("#jd").value} · ${b.start} تا ${b.end}<br>${money(b.total)}</div>`;await load()

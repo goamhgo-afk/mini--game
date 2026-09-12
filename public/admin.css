@@ -11,3 +11,5 @@ body.light th,body.light td{border-bottom-color:#e5eaf1}
 
 #payments{margin-bottom:18px}.payment-row{display:grid;grid-template-columns:1.4fr 1fr 190px;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #29313e}.light .payment-row{border-bottom-color:#e1e7ef}
 @media(max-width:800px){.payment-row{grid-template-columns:1fr}}
+
+.hours-settings{grid-column:1/-1;display:flex;flex-direction:column;gap:10px;padding-top:8px}.hours-settings>b{font-size:14px}.hours-settings>small{color:#8f98a8;font-size:11px}.day-hours{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px}.day-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.day-title b{font-size:13px}.day-title button{padding:7px 10px}.day-hour-list{display:flex;flex-direction:column;gap:7px}.hour-row{display:grid;grid-template-columns:1fr 30px 1fr 70px;gap:8px;align-items:center}.hour-row input{margin-top:0}.hour-row button{padding:9px}.light .hours-settings>small{color:#64748b}.light .day-hours{border-color:rgba(15,23,42,.12)}@media(max-width:700px){.hour-row{grid-template-columns:1fr 25px 1fr 60px}.settings{grid-template-columns:1fr}}

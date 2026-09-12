@@ -35,6 +35,7 @@ async function load(){
     $("#name").value=settings.name||"Mini Game";
     $("#price").value=settings.defaultPrice||50000;
     $("#footballPrice").value=settings.footballPrice||20000;
+    renderHours(settings.openHoursByDay||{});
 
     $("#devices").innerHTML=devices.map(d=>`<div class="row">
       <input id="n${d.id}" value="${esc(d.name)}">
@@ -83,6 +84,32 @@ async function paymentStatus(id,status){
   try{await api("/api/admin/bookings/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentStatus:status})});await load();}
   catch(e){alert(e.message)}
 }
+
+function renderHours(byDay){
+ const list=$("#daysHoursList");if(!list)return;
+ const names=["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
+ list.innerHTML=Array.from({length:7},(_,day)=>{
+   const hours=Array.isArray(byDay?.[day])?byDay[day]:[];
+   return `<div class="day-hours" data-day="${day}"><div class="day-title"><b>${names[day]}</b><button type="button" class="addDayHour" data-day="${day}">＋ افزودن بازه</button></div><div class="day-hour-list">${hours.map(v=>hourRow(v)).join("")}</div></div>`;
+ }).join("");
+ list.querySelectorAll(".addDayHour").forEach(btn=>btn.onclick=()=>addHourRow(Number(btn.dataset.day)));
+}
+function hourRow(v="07:00-10:00"){
+ const [a,z]=String(v).split("-");
+ return `<div class="hour-row"><input class="hour-start" value="${esc(a||"")}" placeholder="07:00" inputmode="numeric"><span>تا</span><input class="hour-end" value="${esc(z||"")}" placeholder="10:00" inputmode="numeric"><button type="button" class="deleteBtn">حذف</button></div>`;
+}
+function addHourRow(day){
+ const list=document.querySelector(`.day-hours[data-day="${day}"] .day-hour-list`);if(!list)return;
+ const row=document.createElement("div");row.innerHTML=hourRow();const el=row.firstElementChild;list.appendChild(el);el.querySelector(".deleteBtn").onclick=()=>el.remove();
+}
+function getHoursByDay(){
+ const out={};
+ document.querySelectorAll(".day-hours").forEach(box=>{
+   const day=box.dataset.day;
+   out[day]=[...box.querySelectorAll(".hour-row")].map(r=>{const a=r.querySelector(".hour-start").value.trim(),z=r.querySelector(".hour-end").value.trim();return a+"-"+z}).filter(v=>v!=="-");
+ });
+ return out;
+}
 function renderPayments(bookings){
   const list=$("#paymentList");
   if(!list)return;
@@ -106,7 +133,7 @@ $("#add").onclick=async()=>{
   catch(e){alert(e.message)}
 };
 $("#save").onclick=async()=>{
-  try{await api("/api/admin/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("#name").value,defaultPrice:Number($("#price").value),footballPrice:Number($("#footballPrice").value)})});alert("تنظیمات با موفقیت ذخیره شد.");await load();}
+  try{await api("/api/admin/settings",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("#name").value,defaultPrice:Number($("#price").value),footballPrice:Number($("#footballPrice").value),openHoursByDay:getHoursByDay()})});alert("تنظیمات با موفقیت ذخیره شد.");await load();}
   catch(e){alert(e.message)}
 };
 $("#adminTheme").onclick=()=>{document.body.classList.toggle("light");localStorage.setItem("mini-admin-theme",document.body.classList.contains("light")?"light":"dark")};
