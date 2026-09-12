@@ -58,7 +58,9 @@ function freeAt(d){
  const date=$("#date").value,start=$("#start").value,dur=+$("#duration").value;
  if(!start)return true;
  let end=toMin(start)+dur*60;
- return !bookings.some(b=>b.deviceId==d.id&&b.date===date&&b.status!=="cancelled"&&toMin(start)<toMin(b.end)&&end>toMin(b.start));
+ const overlap=(b)=>b.status!=="cancelled"&&b.date===date&&toMin(start)<toMin(b.end)&&end>toMin(b.start);
+ if(bookings.some(b=>b.football&&overlap(b)))return false;
+ return !bookings.some(b=>b.deviceId==d.id&&overlap(b));
 }
 function render(){
  $("#grid").innerHTML=devices.map(d=>{let free=freeAt(d);return `<div class="card"><div class="icon">🎮</div><h3>${d.name}</h3><p class="${free?"green":"red"}">● ${free?"آزاد":"این ساعت رزرو شده"}</p><strong>${money(d.price)} / ساعت</strong></div>`}).join("");

@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#0b0f17"/>
-  <path d="M18 28c1-7 5-11 11-11h6c6 0 10 4 11 11l3 14c1 5-5 8-9 5l-7-5-7 5c-4 3-10 0-9-5l3-14z" fill="#8cff00"/>
-  <rect x="21" y="29" width="10" height="3" rx="1.5" fill="#0b0f17"/>
-  <rect x="24.5" y="25.5" width="3" height="10" rx="1.5" fill="#0b0f17"/>
-  <circle cx="42" cy="28" r="2.5" fill="#0b0f17"/>
-  <circle cx="47" cy="33" r="2.5" fill="#0b0f17"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#0b1018"/><rect x="9" y="9" width="110" height="110" rx="24" fill="none" stroke="#b7ff2a" stroke-opacity=".18" stroke-width="3"/><path d="M36 52c-9 0-16 7-18 17l-4 22c-2 11 11 17 18 9l12-12h40l12 12c7 8 20 2 18-9l-4-22c-2-10-9-17-18-17H36Z" fill="#b7ff2a"/><rect x="33" y="65" width="22" height="6" rx="3" fill="#0b1018"/><rect x="41" y="57" width="6" height="22" rx="3" fill="#0b1018"/><circle cx="86" cy="64" r="5" fill="#0b1018"/><circle cx="97" cy="73" r="5" fill="#0b1018"/><path d="M55 88h18" stroke="#0b1018" stroke-width="5" stroke-linecap="round"/></svg>
