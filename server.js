@@ -1,6 +1,6 @@
 const http=require("http"),fs=require("fs"),path=require("path"),crypto=require("crypto");
 const ADMIN_USER="admin",ADMIN_PASS="MiniGame1389",SESSIONS=new Set();
-const PORT=3000,ROOT=__dirname,PUBLIC=path.join(ROOT,"public"),DB=path.join(ROOT,"data/db.json");
+const PORT=Number(process.env.PORT)||3000,HOST="0.0.0.0",ROOT=__dirname,PUBLIC=path.join(ROOT,"public"),DB=path.join(ROOT,"data/db.json");
 const load=()=>JSON.parse(fs.readFileSync(DB,"utf8")),save=x=>fs.writeFileSync(DB,JSON.stringify(x,null,2),"utf8");
 const send=(r,s,x,t="application/json; charset=utf-8")=>{r.writeHead(s,{"Content-Type":t});r.end(t.startsWith("application/json")?JSON.stringify(x):x)};
 const body=req=>new Promise((ok,no)=>{let s="";req.on("data",x=>s+=x);req.on("end",()=>{try{ok(s?JSON.parse(s):{})}catch(e){no(e)}})});
@@ -18,6 +18,7 @@ try{
   if(x.user!==ADMIN_USER||x.pass!==ADMIN_PASS)return send(res,401,{error:"نام کاربری یا رمز عبور اشتباه است"});
   const token=crypto.randomBytes(24).toString("hex");SESSIONS.add(token);return send(res,200,{token});
  }
+ if(req.method==="POST"&&p==="/api/bookings/cancel"){const x=await body(req);const code=String(x.code||"").trim(),phone=String(x.phone||"").trim();const b=db.bookings.find(a=>a.code===code&&a.phone===phone&&a.status!=="cancelled");if(!b)return send(res,404,{error:"کد رزرو یا شماره تماس صحیح نیست"});b.status="cancelled";b.paymentStatus="cancelled";save(db);return send(res,200,{ok:true})}
  const adminOK=SESSIONS.has(req.headers["x-admin-token"]||"");
  if(p.startsWith("/api/admin")&&!adminOK)return send(res,401,{error:"ورود مدیر لازم است"});
  if(req.method==="GET"&&p==="/api/settings")return send(res,200,db.settings);
@@ -43,7 +44,7 @@ if(overlappingFootball){
  let m=p.match(/^\/api\/admin\/devices\/(\d+)$/);if(m&&req.method==="PUT"){let d=db.devices.find(x=>x.id==m[1]);if(!d)return send(res,404,{error:"دستگاه پیدا نشد"});let x=await body(req);Object.assign(d,{name:x.name||d.name,price:+x.price||d.price,status:x.status||d.status});save(db);return send(res,200,d)}
  if(m&&req.method==="DELETE"){let n=+m[1];if(db.bookings.some(b=>b.deviceId===n&&b.status!=="cancelled"))return send(res,409,{error:"این دستگاه رزرو فعال دارد"});db.devices=db.devices.filter(d=>d.id!==n);save(db);return send(res,200,{ok:true})}
  if(req.method==="PUT"&&p==="/api/admin/settings"){let x=await body(req);db.settings.name=x.name||db.settings.name;db.settings.defaultPrice=+x.defaultPrice||db.settings.defaultPrice;db.settings.footballPrice=+x.footballPrice||db.settings.footballPrice||20000;save(db);return send(res,200,db.settings)}
- m=p.match(/^\/api\/admin\/bookings\/(\d+)$/);if(m&&req.method==="PUT"){let b=db.bookings.find(x=>x.id==m[1]);let x=await body(req);if(!b)return send(res,404,{error:"رزرو پیدا نشد"});b.status=x.status;save(db);return send(res,200,b)}
+ m=p.match(/^\/api\/admin\/bookings\/(\d+)$/);if(m&&req.method==="PUT"){let b=db.bookings.find(x=>x.id==m[1]);let x=await body(req);if(!b)return send(res,404,{error:"رزرو پیدا نشد"});if(x.status!==undefined)b.status=x.status;if(x.paymentStatus!==undefined)b.paymentStatus=x.paymentStatus;save(db);return send(res,200,b)}
  let file=p==="/"?"index.html":p.slice(1),fp=path.join(PUBLIC,file);if(!fp.startsWith(PUBLIC)||!fs.existsSync(fp))return send(res,404,{error:"Not found"});let ext=path.extname(fp),type={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8"}[ext]||"application/octet-stream";send(res,200,fs.readFileSync(fp),type)
 }catch(e){console.error(e);send(res,500,{error:"خطای داخلی سرور"})}});
-server.listen(PORT,()=>console.log("Mini Game: http://localhost:"+PORT));
+server.listen(PORT,HOST,()=>console.log("Mini Game listening on "+HOST+":"+PORT));

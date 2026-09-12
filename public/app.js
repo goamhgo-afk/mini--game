@@ -48,7 +48,7 @@ function updateDays(){
 function initDate(){
  let now=new Date(),[jy,jm,jd]=g2j(now.getFullYear(),now.getMonth()+1,now.getDate());
  $("#jy").innerHTML="";$("#jm").innerHTML="";$("#jd").innerHTML="";
- for(let y=1400;y<=1410;y++)$("#jy").insertAdjacentHTML("beforeend",`<option value="${y}">${y}</option>`);
+ for(let y=1404;y<=1410;y++)$("#jy").insertAdjacentHTML("beforeend",`<option value="${y}">${y}</option>`);
  for(let m=1;m<=12;m++)$("#jm").insertAdjacentHTML("beforeend",`<option value="${m}">${m}</option>`);
  for(let d=1;d<=31;d++)$("#jd").insertAdjacentHTML("beforeend",`<option value="${d}">${d}</option>`);
  $("#jy").value=jy;$("#jm").value=jm;$("#jd").value=jd;updateDays();syncDate();
@@ -68,21 +68,25 @@ function render(){
  else {let f=[...$("#device").options].find(o=>!o.disabled);if(f)$("#device").value=f.value}
 }
 function updateTotal(){let d=devices.find(x=>x.id==$("#device").value);let base=(d?.price||50000)*+$("#duration").value;let extra=$("#football")?.checked?(+settings.footballPrice||20000):0;$("#total").textContent=money(base+extra)}
-async function load(){[devices,bookings,settings]=await Promise.all([api("/api/devices"),api("/api/bookings"),api("/api/settings")]);render();updateTotal();loadAvailability();updateFootballText()}
+async function load(){[devices,bookings,settings]=await Promise.all([api("/api/devices"),api("/api/bookings"),api("/api/settings")]);render();updateTotal();updateFootballText()}
 ["jy","jm","jd","start","duration"].forEach(x=>$("#"+x).onchange=()=>{if(x==="jy"||x==="jm"||x==="jd")syncDate();else{render();updateTotal()}});
 $("#device").onchange=updateTotal;
 function initTime24(){let el=$("#start");if(!el)return;el.innerHTML="";for(let h=0;h<24;h++)for(let m of [0,30]){let v=`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;el.insertAdjacentHTML("beforeend",`<option value="${v}">${v}</option>`)}}
 function footballBlockedForTime(){let start=$("#start")?.value||"";let dur=+$("#duration").value||1;if(!start)return false;let [hh,mm]=start.split(":").map(Number);let mins=hh*60+mm;let end=mins+dur*60;return bookings.some(b=>b.status!=="cancelled"&&b.football&&b.date===$("#date").value&&Math.max(mins,hm(b.start))<Math.min(end,hm(b.end)))}
 function hm(t){let p=String(t).split(":").map(Number);return (p[0]||0)*60+(p[1]||0)}
 function updateFootballText(){let blocked=footballBlockedForTime();if($("#football")){if(blocked){$("#football").checked=false;$("#football").disabled=true}else $("#football").disabled=false}if($("#footballPriceText"))$("#footballPriceText").textContent=blocked?" (این ساعت رزرو شده است)":` (+${money(settings.footballPrice||20000)})`;updateTotal()} $("#football").onchange=updateFootballText;
+function normalizeDigits(v){return String(v).replace(/[۰-۹]/g,d=>String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));}
+$("#phone").addEventListener("input",()=>{$("#phone").value=normalizeDigits($("#phone").value).replace(/\D/g,"").slice(0,11)});
+$("#cancelPhone").addEventListener("input",()=>{$("#cancelPhone").value=normalizeDigits($("#cancelPhone").value).replace(/\D/g,"").slice(0,11)});
 $("#form").onsubmit=async e=>{e.preventDefault();
+ if(!$("#customer").value.trim())return $("#result").innerHTML='<div class="error">لطفاً نام را وارد کنید.</div>';
  if(!/^09\d{9}$/.test($("#phone").value.trim()))return $("#result").innerHTML='<div class="error">شماره تماس باید ۱۱ رقمی و با 09 شروع شود.</div>';
  if(!$("#start").value)return $("#result").innerHTML='<div class="error">ساعت شروع را انتخاب کنید.</div>';
  let d=devices.find(x=>x.id==$("#device").value);if(!d||!freeAt(d))return $("#result").innerHTML='<div class="error">این دستگاه در این ساعت آزاد نیست؛ یک دستگاه یا ساعت دیگر انتخاب کنید.</div>';
- try{let b=await api("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({deviceId:+$("#device").value,date:$("#date").value,start:$("#start").value,duration:+$("#duration").value,customer:$("#customer").value.trim(),phone:$("#phone").value.trim()})});
+ try{let b=await api("/api/bookings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({deviceId:+$("#device").value,date:$("#date").value,start:$("#start").value,duration:+$("#duration").value,customer:$("#customer").value.trim(),phone:normalizeDigits($("#phone").value.trim()),football:!!$("#football").checked})});
  $("#result").innerHTML=`<div class="success">رزرو با موفقیت ثبت شد 🎉<br>کد رزرو: <b>${b.code}</b><br>${b.deviceName} · ${$("#jy").value}/${$("#jm").value}/${$("#jd").value} · ${b.start} تا ${b.end}<br>${money(b.total)}</div>`;await load()
  }catch(e){$("#result").innerHTML=`<div class="error">${e.message}</div>`}};
 $("#theme").onclick=()=>{document.body.classList.toggle("light");localStorage.setItem("mini-theme",document.body.classList.contains("light")?"light":"dark")};
 if(localStorage.getItem("mini-theme")==="light")document.body.classList.add("light");
 initTime24();initDate();load();
-$("#cancelForm")?.addEventListener("submit",async e=>{e.preventDefault();try{await api("/api/bookings/cancel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:$("#cancelCode").value,phone:$("#cancelPhone").value})});$("#cancelResult").innerHTML='<div class="success">رزرو با موفقیت لغو شد. مبلغ پرداختی در صورت نیاز طبق شرایط پرداخت قابل پیگیری است.</div>';await load()}catch(err){$("#cancelResult").innerHTML=`<div class="error">${err.message}</div>`}});
+$("#cancelForm")?.addEventListener("submit",async e=>{e.preventDefault();let code=$("#cancelCode").value.trim(),phone=normalizeDigits($("#cancelPhone").value.trim());if(!code)return $("#cancelResult").innerHTML='<div class="error">لطفاً کد رزرو را وارد کنید.</div>';if(!/^09\d{9}$/.test(phone))return $("#cancelResult").innerHTML='<div class="error">شماره تماس باید ۱۱ رقمی و با 09 شروع شود.</div>';try{await api("/api/bookings/cancel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,phone})});$("#cancelResult").innerHTML='<div class="success">رزرو با موفقیت لغو شد.</div>';await load()}catch(err){$("#cancelResult").innerHTML=`<div class="error">${err.message}</div>`}});
