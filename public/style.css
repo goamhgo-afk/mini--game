@@ -28,3 +28,18 @@
 .cancel-box form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}
 .light .cancel-box{background:#fff;border-color:#e1e7ef;box-shadow:0 10px 30px rgba(25,40,60,.06)}
 @media(max-width:700px){.cancel-box form{grid-template-columns:1fr}}
+
+/* Premium cancel reservation UI */
+.cancel-box{max-width:760px;margin:30px auto;padding:26px;border:1px solid #252d3a;border-radius:22px;background:linear-gradient(145deg,#10151e,#0c1017);box-shadow:0 16px 40px rgba(0,0,0,.16)}
+.cancel-box h2{margin:0 0 8px;font-size:26px}
+.cancel-box p{margin:0 0 20px;color:#8f99a8;font-size:13px}
+.cancel-box form{background:transparent;border:0;box-shadow:none;padding:0;display:grid;grid-template-columns:1fr 1fr auto;gap:10px;max-width:none}
+.cancel-box input{margin-top:0;height:48px}
+.cancel-box button{height:48px;padding:0 22px;border:1px solid #7d3340;border-radius:12px;background:#24131a;color:#ff9baa;font-weight:bold;cursor:pointer;transition:.2s}
+.cancel-box button:hover{background:#351720;border-color:#ff6578;color:#fff;transform:translateY(-1px);box-shadow:0 8px 20px rgba(255,101,120,.12)}
+.cancel-box #cancelResult{margin-top:12px}
+.light .cancel-box{background:linear-gradient(145deg,#fff,#f7f9fc);border-color:#e0e6ee}
+.light .cancel-box p{color:#68768a}
+.light .cancel-box button{background:#fff3f4;color:#c83f52;border-color:#f0b9c0}
+.light .cancel-box button:hover{background:#ffe8eb;border-color:#df6170;color:#a92e40}
+@media(max-width:700px){.cancel-box form{grid-template-columns:1fr}.cancel-box button{width:100%}}
